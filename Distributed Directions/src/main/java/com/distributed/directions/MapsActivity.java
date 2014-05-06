@@ -5,8 +5,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -14,10 +16,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity {
+public class MapsActivity extends FragmentActivity implements
+        GoogleMap.OnMapLongClickListener {
 
+    private LatLng destination;
+    private LatLng startPos;
     private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
-    static final LatLng TutorialsPoint = new LatLng(21 , 57);
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,14 +30,8 @@ public class MapsActivity extends FragmentActivity {
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
 
-        LocationManager locationManager = (LocationManager)
-                getSystemService(this.LOCATION_SERVICE);
+        googleMap.setOnMapLongClickListener(this);
 
-
-        Location currentPos = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-
-        googleMap.addMarker(new MarkerOptions().position(
-                new LatLng(currentPos.getLatitude(), currentPos.getLongitude())).title("current"));
 
     }
 
@@ -40,6 +39,8 @@ public class MapsActivity extends FragmentActivity {
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
+        googleMap.setOnMapLongClickListener(this);
+
     }
 
     /**
@@ -78,7 +79,58 @@ public class MapsActivity extends FragmentActivity {
      * This should only be called once and when we are sure that {@link #googleMap} is not null.
      */
     private void setUpMap() {
-        googleMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("origin"));
+        LocationManager locationManager = (LocationManager)
+                getSystemService(this.LOCATION_SERVICE);
 
+        Location currentPos = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
+        startPos = new LatLng(currentPos.getLatitude(), currentPos.getLongitude());
+
+        googleMap.addMarker(new MarkerOptions().position(
+                startPos).title("Current Position"));
+
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng(startPos));
+        googleMap.moveCamera(CameraUpdateFactory.zoomTo(12));
     }
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        googleMap.clear();
+        googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
+        destination = latLng;
+
+        CharSequence text = "Distance: " + getDistance(startPos, destination) +
+                " miles, Degree: " + getAngleOfLineBetweenTwoPoints(startPos, destination);
+        int duration = Toast.LENGTH_LONG;
+
+        Toast toast = Toast.makeText(this, text, duration);
+        toast.show();
+    }
+
+    private double getDistance(LatLng p1, LatLng p2){
+        double lat1 = p1.latitude;
+        double lon1 = p1.longitude;
+        double lat2 = p2.latitude;
+        double lon2 = p2.longitude;
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+        return (dist);
+    }
+
+    private double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+
+    private double rad2deg(double rad) {
+        return (rad * 180.0 / Math.PI);
+    }
+
+    private double getAngleOfLineBetweenTwoPoints(LatLng p1, LatLng p2) {
+        double xDiff = p2.latitude - p1.latitude;
+        double yDiff = p2.longitude - p1.longitude;
+        return Math.toDegrees(Math.atan2(yDiff, xDiff));
+    }
+
 }
