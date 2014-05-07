@@ -1,36 +1,70 @@
 package com.distributed.directions;
 
+import android.content.Intent;
 import android.location.Location;
-import android.location.LocationListener;
+
+import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
+
 public class MapsActivity extends FragmentActivity implements
-        GoogleMap.OnMapLongClickListener {
+        GooglePlayServicesClient.ConnectionCallbacks,
+        GooglePlayServicesClient.OnConnectionFailedListener,
+        GoogleMap.OnMapLongClickListener,
+        LocationListener{
+
+    // Milliseconds per second
+    private static final int MILLISECONDS_PER_SECOND = 1000;
+    // Update frequency in seconds
+    public static final int UPDATE_INTERVAL_IN_SECONDS = 5;
+    // Update frequency in milliseconds
+    private static final long UPDATE_INTERVAL =
+            MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
+
 
     private LatLng destination;
     private LatLng startPos;
     private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
-
+    LocationRequest mLocationRequest;
+    LocationClient mLocationClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
         setUpMapIfNeeded();
-
         googleMap.setOnMapLongClickListener(this);
+
+        mLocationRequest = LocationRequest.create();
+        // Use high accuracy
+        mLocationRequest.setPriority(
+                LocationRequest.PRIORITY_HIGH_ACCURACY);
+        // Set the update interval to 5 seconds
+        mLocationRequest.setInterval(UPDATE_INTERVAL);
+
+        mLocationClient = new LocationClient(this, this, this);
+
+        mLocationClient.connect();
 
 
     }
@@ -39,9 +73,10 @@ public class MapsActivity extends FragmentActivity implements
     protected void onResume() {
         super.onResume();
         setUpMapIfNeeded();
-        googleMap.setOnMapLongClickListener(this);
 
     }
+
+
 
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -79,17 +114,26 @@ public class MapsActivity extends FragmentActivity implements
      * This should only be called once and when we are sure that {@link #googleMap} is not null.
      */
     private void setUpMap() {
-        LocationManager locationManager = (LocationManager)
-                getSystemService(this.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager)getSystemService(this.LOCATION_SERVICE);
 
         Location currentPos = locationManager.getLastKnownLocation(locationManager.GPS_PROVIDER);
-        startPos = new LatLng(currentPos.getLatitude(), currentPos.getLongitude());
+        if (currentPos == null) {
+            currentPos = locationManager.getLastKnownLocation(locationManager.NETWORK_PROVIDER);
+        }
 
-        googleMap.addMarker(new MarkerOptions().position(
-                startPos).title("Current Position"));
+        if(currentPos != null) {
+            startPos = new LatLng(currentPos.getLatitude(), currentPos.getLongitude());
+            googleMap.addMarker(new MarkerOptions().position(
+                    startPos).title("Current Position"));
+            googleMap.moveCamera(CameraUpdateFactory.newLatLng(startPos));
+            googleMap.moveCamera(CameraUpdateFactory.zoomTo(12));
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(startPos));
-        googleMap.moveCamera(CameraUpdateFactory.zoomTo(12));
+        }else{
+            CharSequence text = "GPS not running, can't determine position";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(this, text, duration);
+            toast.show();
+        }
     }
 
     @Override
@@ -98,12 +142,14 @@ public class MapsActivity extends FragmentActivity implements
         googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
         destination = latLng;
 
-        CharSequence text = "Distance: " + getDistance(startPos, destination) +
-                " miles, Degree: " + getAngleOfLineBetweenTwoPoints(startPos, destination);
+        String message = getDistDirMessage();
+        CharSequence text = message;
         int duration = Toast.LENGTH_LONG;
 
         Toast toast = Toast.makeText(this, text, duration);
         toast.show();
+
+        sendAlertToPebble(message);
     }
 
     private double getDistance(LatLng p1, LatLng p2){
@@ -133,4 +179,74 @@ public class MapsActivity extends FragmentActivity implements
         return Math.toDegrees(Math.atan2(yDiff, xDiff));
     }
 
+    public void sendAlertToPebble(String message) {
+        try {
+            final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
+
+            final Map data = new HashMap();
+            data.put("title", "Test Message");
+            data.put("body", message);
+            final JSONObject jsonData = new JSONObject(data);
+            final String notificationData = new JSONArray().put(jsonData).toString();
+
+            i.putExtra("messageType", "PEBBLE_ALERT");
+            i.putExtra("sender", "MyAndroidApp");
+            i.putExtra("notificationData", notificationData);
+
+            sendBroadcast(i);
+        }catch (Exception e){
+            CharSequence text = "Couldn't send message to Pebble";
+            int duration = Toast.LENGTH_LONG;
+            Toast toast = Toast.makeText(this, text, duration);
+            toast.show();
+        }
+    }
+
+    public String getDistDirMessage(){
+        DecimalFormat myFormatter = new DecimalFormat("##.##");
+        return "Distance: " + myFormatter.format(getDistance(startPos, destination)) +
+                " miles, Degree: " + myFormatter.format(getAngleOfLineBetweenTwoPoints(startPos, destination));
+
+    }
+
+
+    @Override
+    public void onLocationChanged(Location location) {
+        // Report to the UI that the location was updated
+        String msg = "Updated Location: " +
+                Double.toString(location.getLatitude()) + "," +
+                Double.toString(location.getLongitude());
+        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+    }
+
+    /*
+ * Called by Location Services when the request to connect the
+ * client finishes successfully. At this point, you can
+ * request the current location or start periodic updates
+ */
+    @Override
+    public void onConnected(Bundle dataBundle) {
+        // Display the connection status
+        Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
+        // If already requested, start periodic updates
+        mLocationClient.requestLocationUpdates(mLocationRequest, this);
+
+    }
+
+    @Override
+    public void onDisconnected() {
+        // Display the connection status
+        Toast.makeText(this, "Disconnected. Please re-connect.",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /*
+ * Called by Location Services if the attempt to
+ * Location Services fails.
+ */
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
+
+    }
 }
