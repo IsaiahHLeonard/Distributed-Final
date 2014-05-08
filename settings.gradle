@@ -1,1 +1,1 @@
-include ':Distributed Directions'
+include ':Distributed Directions', ':app'

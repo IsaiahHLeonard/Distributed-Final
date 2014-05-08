@@ -3,6 +3,8 @@ package com.distributed.directions;
 import android.content.Intent;
 import android.location.Location;
 
+import com.getpebble.android.kit.PebbleKit;
+import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.FragmentActivity;
@@ -26,6 +28,7 @@ import org.json.JSONObject;
 import java.text.DecimalFormat;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class MapsActivity extends FragmentActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
@@ -33,20 +36,26 @@ public class MapsActivity extends FragmentActivity implements
         GoogleMap.OnMapLongClickListener,
         LocationListener{
 
+    private final static UUID PEBBLE_APP_UUID = UUID.fromString("ab457116-2823-4189-9b18-980eae57f301");
+
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
     // Update frequency in seconds
-    public static final int UPDATE_INTERVAL_IN_SECONDS = 5;
+    public static final int UPDATE_INTERVAL_IN_SECONDS = 10;
     // Update frequency in milliseconds
     private static final long UPDATE_INTERVAL =
             MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
 
 
+    private LatLng lastPos;
     private LatLng destination;
     private LatLng startPos;
     private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
     LocationRequest mLocationRequest;
     LocationClient mLocationClient;
+    boolean mLocationUpdateBool;
+    boolean firstLocationBool;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,10 +64,12 @@ public class MapsActivity extends FragmentActivity implements
         setUpMapIfNeeded();
         googleMap.setOnMapLongClickListener(this);
 
+        mLocationUpdateBool = false;
+
         mLocationRequest = LocationRequest.create();
         // Use high accuracy
         mLocationRequest.setPriority(
-                LocationRequest.PRIORITY_HIGH_ACCURACY);
+                LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         // Set the update interval to 5 seconds
         mLocationRequest.setInterval(UPDATE_INTERVAL);
 
@@ -66,6 +77,7 @@ public class MapsActivity extends FragmentActivity implements
 
         mLocationClient.connect();
 
+        PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID);
 
     }
 
@@ -123,8 +135,8 @@ public class MapsActivity extends FragmentActivity implements
 
         if(currentPos != null) {
             startPos = new LatLng(currentPos.getLatitude(), currentPos.getLongitude());
-            googleMap.addMarker(new MarkerOptions().position(
-                    startPos).title("Current Position"));
+            /**googleMap.addMarker(new MarkerOptions().position(
+                    startPos).title("Current Position"));*/
             googleMap.moveCamera(CameraUpdateFactory.newLatLng(startPos));
             googleMap.moveCamera(CameraUpdateFactory.zoomTo(12));
 
@@ -142,14 +154,17 @@ public class MapsActivity extends FragmentActivity implements
         googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
         destination = latLng;
 
-        String message = getDistDirMessage();
-        CharSequence text = message;
+        CharSequence text = "Directing to this location";
         int duration = Toast.LENGTH_LONG;
 
         Toast toast = Toast.makeText(this, text, duration);
         toast.show();
 
-        sendAlertToPebble(message);
+        firstLocationBool = true;
+        mLocationUpdateBool = true;
+        if(mLocationUpdateBool) {
+            mLocationClient.requestLocationUpdates(mLocationRequest, this);
+        }
     }
 
     private double getDistance(LatLng p1, LatLng p2){
@@ -176,24 +191,22 @@ public class MapsActivity extends FragmentActivity implements
     private double getAngleOfLineBetweenTwoPoints(LatLng p1, LatLng p2) {
         double xDiff = p2.latitude - p1.latitude;
         double yDiff = p2.longitude - p1.longitude;
-        return Math.toDegrees(Math.atan2(yDiff, xDiff));
+        double latlangAngle = (Math.toDegrees(Math.atan2(yDiff, xDiff)) + 360.0)%360;
+        return (-1.0 * (latlangAngle - 90.0) + 360)%360;
+
     }
 
-    public void sendAlertToPebble(String message) {
+    public void sendAlertToPebble(String dist, int angle) {
         try {
-            final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
+            PebbleDictionary data = new PebbleDictionary();
+            data.addUint8(0, (byte) 42);
+            data.addString(1, "Distance: " + dist + " miles");
+            if(angle != -1) {
+                data.addUint32(2, angle);
+                //data.addString(2, angle + "");
+            }
+            PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID, data);
 
-            final Map data = new HashMap();
-            data.put("title", "Test Message");
-            data.put("body", message);
-            final JSONObject jsonData = new JSONObject(data);
-            final String notificationData = new JSONArray().put(jsonData).toString();
-
-            i.putExtra("messageType", "PEBBLE_ALERT");
-            i.putExtra("sender", "MyAndroidApp");
-            i.putExtra("notificationData", notificationData);
-
-            sendBroadcast(i);
         }catch (Exception e){
             CharSequence text = "Couldn't send message to Pebble";
             int duration = Toast.LENGTH_LONG;
@@ -202,21 +215,40 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 
-    public String getDistDirMessage(){
-        DecimalFormat myFormatter = new DecimalFormat("##.##");
-        return "Distance: " + myFormatter.format(getDistance(startPos, destination)) +
-                " miles, Degree: " + myFormatter.format(getAngleOfLineBetweenTwoPoints(startPos, destination));
+    public String getDistMessage(LatLng current){
+        DecimalFormat myFormatter = new DecimalFormat("##.###");
+        return myFormatter.format(getDistance(current, destination)) + "";
+    }
 
+    public int getDirMessage(LatLng current){
+        double angleToDest = getAngleOfLineBetweenTwoPoints(current, destination);
+        return (int) angleToDest;
+        /**
+        double direction = getAngleOfLineBetweenTwoPoints(lastPos, current);
+        double actual = (angleToDest - direction + 450.0)%360;
+
+        return (int) actual;*/
     }
 
 
     @Override
     public void onLocationChanged(Location location) {
         // Report to the UI that the location was updated
+        /** Finds distance from start to destination
         String msg = "Updated Location: " +
                 Double.toString(location.getLatitude()) + "," +
                 Double.toString(location.getLongitude());
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+        */
+        LatLng current =  new LatLng(location.getLatitude(), location.getLongitude());
+        /**if(firstLocationBool){
+            firstLocationBool = false;
+            lastPos = current;
+            sendAlertToPebble(getDistMessage(lastPos), -1);
+        }else {*/
+            sendAlertToPebble(getDistMessage(current), getDirMessage(current));
+            lastPos = current;
+        //}
     }
 
     /*
@@ -229,7 +261,9 @@ public class MapsActivity extends FragmentActivity implements
         // Display the connection status
         Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
         // If already requested, start periodic updates
-        mLocationClient.requestLocationUpdates(mLocationRequest, this);
+        if(mLocationUpdateBool) {
+            mLocationClient.requestLocationUpdates(mLocationRequest, this);
+        }
 
     }
 

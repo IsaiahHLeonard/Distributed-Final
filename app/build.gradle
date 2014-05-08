@@ -1,0 +1,21 @@
+apply plugin: 'android-library'
+
+android {
+    compileSdkVersion 16
+    buildToolsVersion "19.0.0"
+
+    defaultConfig {
+        minSdkVersion -1
+    }
+
+    buildTypes {
+        release {
+            runProguard false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.google.guava:guava:14.0.1'
+}
