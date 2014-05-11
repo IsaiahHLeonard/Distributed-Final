@@ -1,9 +1,11 @@
 package com.distributed.directions;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
 
+import com.getpebble.android.kit.Constants;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.android.gms.location.LocationListener;
@@ -37,7 +39,8 @@ public class MapsActivity extends FragmentActivity implements
         GoogleMap.OnMapLongClickListener,
         LocationListener{
 
-    private final static UUID PEBBLE_APP_UUID = UUID.fromString("ab457116-2823-4189-9b18-980eae57f301");
+    private final static UUID PEBBLE_APP_UUID_DIRECTIONS = UUID.fromString("ab457116-2823-4189-9b18-980eae57f301");
+    private final static UUID PEBBLE_APP_UUID_GEOFENCE = UUID.fromString("fd214ce8-7f74-4747-b1e0-d5e1932f1d47");
 
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -49,9 +52,8 @@ public class MapsActivity extends FragmentActivity implements
 
     private static final double GEOFENCE_RADIUS = 0.05;
 
-    private List<String> visitedLocations;
     private LatLng lastPos;
-    private LatLng destination;
+
     private LatLng startPos;
     private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
     LocationRequest mLocationRequest;
@@ -95,8 +97,39 @@ public class MapsActivity extends FragmentActivity implements
         if(!directionsApp) {
             loadLocations();
             setUpMarks();
+            PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID_GEOFENCE);
+        }else{
+            PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID_DIRECTIONS);
+            SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+            double lat = Double.longBitsToDouble(prefs.getLong("destinationLat", 0));
+            double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 0));
+            if(!(lat == 0 && lon == 0)){
+                googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Destination"));
+            }
         }
-        PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID);
+        if(!directionsApp) {
+            PebbleKit.PebbleDataReceiver pebbleListener = new PebbleKit.PebbleDataReceiver(PEBBLE_APP_UUID_GEOFENCE) {
+                @Override
+                public void receiveData(final Context context, final int transactionId, final PebbleDictionary data) {
+                    String name = data.getString(1);
+                    CharSequence text = "turn on app in " + name;
+                    int duration = Toast.LENGTH_LONG;
+                    Toast toast = Toast.makeText(MapsActivity.this, text, duration);
+                    toast.show();
+
+                    Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
+                    while(it.hasNext()){
+                        SavedLocation tempLoc = it.next();
+                        if(tempLoc.getName() == name) {
+                            // TODO: Turn on application
+                        }
+                    }
+
+                }
+            };
+            PebbleKit.registerReceivedDataHandler(this, pebbleListener);
+        }
+
 
     }
 
@@ -108,6 +141,7 @@ public class MapsActivity extends FragmentActivity implements
             setUpMarks();
         }
     }
+
 
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -192,7 +226,11 @@ public class MapsActivity extends FragmentActivity implements
         if(directionsApp) {
             googleMap.clear();
             googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
-            destination = latLng;
+
+            SharedPreferences.Editor editor = getPreferences(MODE_PRIVATE).edit();
+            editor.putLong("destinationLat", Double.doubleToLongBits(latLng.latitude));
+            editor.putLong("destinationLong", Double.doubleToLongBits(latLng.longitude));
+            editor.commit();
 
             CharSequence text = "Directing to this location";
             int duration = Toast.LENGTH_LONG;
@@ -276,7 +314,7 @@ public class MapsActivity extends FragmentActivity implements
                 data.addUint32(2, angle);
                 //data.addString(2, angle + "");
             }
-            PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID, data);
+            PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_DIRECTIONS, data);
 
         }catch (Exception e){
             CharSequence text = "Couldn't send message to Pebble";
@@ -294,7 +332,10 @@ public class MapsActivity extends FragmentActivity implements
      */
     public String getDistMessage(LatLng current){
         DecimalFormat myFormatter = new DecimalFormat("##.###");
-        return myFormatter.format(getDistance(current, destination)) + "";
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        double lat = Double.longBitsToDouble(prefs.getLong("destinationLat", 0));
+        double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 0));
+        return myFormatter.format(getDistance(current, new LatLng(lat, lon))) + "";
     }
 
     /**
@@ -304,7 +345,10 @@ public class MapsActivity extends FragmentActivity implements
      * @return
      */
     public int getDirMessage(LatLng current){
-        double angleToDest = getAngleOfLineBetweenTwoPoints(current, destination);
+        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
+        double lat = Double.longBitsToDouble(prefs.getLong("destinationLat", 0));
+        double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 0));
+        double angleToDest = getAngleOfLineBetweenTwoPoints(current, new LatLng(lat, lon));
         return (int) angleToDest;
         /**
         double direction = getAngleOfLineBetweenTwoPoints(lastPos, current);
@@ -344,9 +388,20 @@ public class MapsActivity extends FragmentActivity implements
                         Toast toast = Toast.makeText(this, text, duration);
                         toast.show();
                         tempLoc.setIsVisited(true);
+
+                        PebbleDictionary data = new PebbleDictionary();
+                        data.addUint8(0, (byte) 42);
+                        data.addString(1, tempLoc.getName());
+                        data.addString(2, tempLoc.getAutomatedActivity());
+                        PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_GEOFENCE, data);
+
                     }
                 }
             }
+
+
+
+
         }
     }
 

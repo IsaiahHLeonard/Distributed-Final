@@ -18,8 +18,7 @@
 
         <activity
             android:name="com.distributed.directions.MapsActivity"
-            android:label="@string/title_activity_maps" >
-
+            android:label="@string/title_activity_maps">
         </activity>
 
         <activity
