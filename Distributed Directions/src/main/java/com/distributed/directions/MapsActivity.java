@@ -1,6 +1,7 @@
 package com.distributed.directions;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 
 import com.getpebble.android.kit.PebbleKit;
@@ -22,12 +23,12 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 import java.text.DecimalFormat;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public class MapsActivity extends FragmentActivity implements
@@ -46,7 +47,9 @@ public class MapsActivity extends FragmentActivity implements
     private static final long UPDATE_INTERVAL =
             MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
 
+    private static final double GEOFENCE_RADIUS = 0.05;
 
+    private List<String> visitedLocations;
     private LatLng lastPos;
     private LatLng destination;
     private LatLng startPos;
@@ -55,13 +58,20 @@ public class MapsActivity extends FragmentActivity implements
     LocationClient mLocationClient;
     boolean mLocationUpdateBool;
     boolean firstLocationBool;
+    boolean directionsApp;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+
+        // Gets data from start screen and determines whether it is a directions or geofence
+        Intent intentFromStart = getIntent();
+        directionsApp = intentFromStart.getBooleanExtra("isDirections", true);
+
         setUpMapIfNeeded();
+
         googleMap.setOnMapLongClickListener(this);
 
         mLocationUpdateBool = false;
@@ -76,7 +86,16 @@ public class MapsActivity extends FragmentActivity implements
         mLocationClient = new LocationClient(this, this, this);
 
         mLocationClient.connect();
+        try {
+            mLocationClient.wait();
+        }catch(Exception e){
+            Log.e("Error:", "Could not connect");
+        }
 
+        if(!directionsApp) {
+            loadLocations();
+            setUpMarks();
+        }
         PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID);
 
     }
@@ -84,11 +103,11 @@ public class MapsActivity extends FragmentActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        setUpMapIfNeeded();
-
+        if(!directionsApp) {
+            loadLocations();
+            setUpMarks();
+        }
     }
-
-
 
     /**
      * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
@@ -120,10 +139,8 @@ public class MapsActivity extends FragmentActivity implements
     }
 
     /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p>
-     * This should only be called once and when we are sure that {@link #googleMap} is not null.
+     * Sets up the location manager and finds the current position. Using the current position,
+     * it zooms the camera so it is zoomed to your location
      */
     private void setUpMap() {
         LocationManager locationManager = (LocationManager)getSystemService(this.LOCATION_SERVICE);
@@ -148,25 +165,58 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 
-    @Override
-    public void onMapLongClick(LatLng latLng) {
-        googleMap.clear();
-        googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
-        destination = latLng;
-
-        CharSequence text = "Directing to this location";
-        int duration = Toast.LENGTH_LONG;
-
-        Toast toast = Toast.makeText(this, text, duration);
-        toast.show();
-
-        firstLocationBool = true;
-        mLocationUpdateBool = true;
-        if(mLocationUpdateBool) {
-            mLocationClient.requestLocationUpdates(mLocationRequest, this);
+    /**
+     * If we are trying to do geofencing, this finds all the locations, and puts a mark down in the map
+     */
+    public void setUpMarks(){
+        if(!directionsApp){
+            Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
+            while(it.hasNext()){
+                SavedLocation tempLoc = it.next();
+                googleMap.addMarker(new MarkerOptions().position(new LatLng(tempLoc.getLatitude(), tempLoc.getLongitude())).
+                        title(tempLoc.getName()));
+            }
         }
     }
 
+    /**
+     * On click listener. If a point is long clicked in the map,
+     * If we are doing directions, this clears the map of markers (previous destination)
+     * and sets the new destination. Also turns on updates so we get updates if location changes
+     * If we are doing geofencing, this adds a new location to the list and goes to the
+     * list activity.
+     * @param latLng: location of point that is long clicked
+     */
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        if(directionsApp) {
+            googleMap.clear();
+            googleMap.addMarker(new MarkerOptions().position(latLng).title("Destination"));
+            destination = latLng;
+
+            CharSequence text = "Directing to this location";
+            int duration = Toast.LENGTH_LONG;
+
+            Toast toast = Toast.makeText(this, text, duration);
+            toast.show();
+
+            mLocationUpdateBool = true;
+            if (mLocationUpdateBool) {
+                mLocationClient.requestLocationUpdates(mLocationRequest, this);
+            }
+        }else{
+            SavedLocation.addLoc(new SavedLocation("New location", latLng.latitude, latLng.longitude));
+            Intent goToList = new Intent(this, SavedLocationListActivity.class);
+            startActivity(goToList);
+        }
+    }
+
+    /**
+     * Gets distance between two points in miles
+     * @param p1
+     * @param p2
+     * @return
+     */
     private double getDistance(LatLng p1, LatLng p2){
         double lat1 = p1.latitude;
         double lon1 = p1.longitude;
@@ -180,14 +230,30 @@ public class MapsActivity extends FragmentActivity implements
         return (dist);
     }
 
+    /**
+     * returns radians from degree
+     * @param deg
+     * @return
+     */
     private double deg2rad(double deg) {
         return (deg * Math.PI / 180.0);
     }
 
+    /**
+     * Returns degree from radians
+     * @param rad
+     * @return
+     */
     private double rad2deg(double rad) {
         return (rad * 180.0 / Math.PI);
     }
 
+    /**
+     * Gets the angle in degrees of two locations in the map.
+     * @param p1
+     * @param p2
+     * @return degree with repect to north of the two points
+     */
     private double getAngleOfLineBetweenTwoPoints(LatLng p1, LatLng p2) {
         double xDiff = p2.latitude - p1.latitude;
         double yDiff = p2.longitude - p1.longitude;
@@ -196,6 +262,11 @@ public class MapsActivity extends FragmentActivity implements
 
     }
 
+    /**
+     * Sends data to pebble watch
+     * @param dist
+     * @param angle
+     */
     public void sendAlertToPebble(String dist, int angle) {
         try {
             PebbleDictionary data = new PebbleDictionary();
@@ -215,11 +286,23 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 
+    /**
+     * Finds the distance from current to destination and returns the
+     * distance in string format with only 3 decimal points
+     * @param current
+     * @return distance to destination
+     */
     public String getDistMessage(LatLng current){
         DecimalFormat myFormatter = new DecimalFormat("##.###");
         return myFormatter.format(getDistance(current, destination)) + "";
     }
 
+    /**
+     * Finds the direction of current location to destination and returns the
+     * degree with respect to north rounded to integers
+     * @param current
+     * @return
+     */
     public int getDirMessage(LatLng current){
         double angleToDest = getAngleOfLineBetweenTwoPoints(current, destination);
         return (int) angleToDest;
@@ -230,7 +313,13 @@ public class MapsActivity extends FragmentActivity implements
         return (int) actual;*/
     }
 
-
+    /**
+     * On location listener. If we move and location is changed, we first check which app we are running.
+     * If finding direction, we find distance and direction to destination and sends message to pebble.
+     * If geofence, then we check all locations and finds distance to current location. If it is near,
+     * we send message
+     * @param location
+     */
     @Override
     public void onLocationChanged(Location location) {
         // Report to the UI that the location was updated
@@ -240,28 +329,38 @@ public class MapsActivity extends FragmentActivity implements
                 Double.toString(location.getLongitude());
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
         */
-        LatLng current =  new LatLng(location.getLatitude(), location.getLongitude());
-        /**if(firstLocationBool){
-            firstLocationBool = false;
-            lastPos = current;
-            sendAlertToPebble(getDistMessage(lastPos), -1);
-        }else {*/
+        LatLng current = new LatLng(location.getLatitude(), location.getLongitude());
+        if(directionsApp) {
             sendAlertToPebble(getDistMessage(current), getDirMessage(current));
             lastPos = current;
-        //}
+        }else{
+            Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
+            while(it.hasNext()) {
+                SavedLocation tempLoc = it.next();
+                if (!tempLoc.isVisited()) {
+                    if (getDistance(current, new LatLng(tempLoc.getLatitude(), tempLoc.getLongitude())) < GEOFENCE_RADIUS) {
+                        CharSequence text = tempLoc.getName() + ", activity: " + tempLoc.getAutomatedActivity();
+                        int duration = Toast.LENGTH_LONG;
+                        Toast toast = Toast.makeText(this, text, duration);
+                        toast.show();
+                        tempLoc.setIsVisited(true);
+                    }
+                }
+            }
+        }
     }
 
     /*
- * Called by Location Services when the request to connect the
- * client finishes successfully. At this point, you can
- * request the current location or start periodic updates
- */
+    * Called by Location Services when the request to connect the
+    * client finishes successfully. At this point, you can
+    * request the current location or start periodic updates
+    */
     @Override
     public void onConnected(Bundle dataBundle) {
         // Display the connection status
         Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show();
         // If already requested, start periodic updates
-        if(mLocationUpdateBool) {
+        if(mLocationUpdateBool || !directionsApp) {
             mLocationClient.requestLocationUpdates(mLocationRequest, this);
         }
 
@@ -281,6 +380,23 @@ public class MapsActivity extends FragmentActivity implements
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
+    }
 
+    /**
+     * Loads the location for geofencing from SavedLocations.
+     */
+    private void loadLocations() {
+        SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.locs", 0);
+        Map<String, ?> locMap = prefs.getAll();
+        Set<String> keys = locMap.keySet();
+        String next;
+        for (String s : keys) {
+            next = prefs.getString(s, "");
+            if (next.length() > 0) {
+                SavedLocation loc = new SavedLocation(next);
+                loc.setIsVisited(false);
+                SavedLocation.addLoc(loc);
+            }
+        }
     }
 }

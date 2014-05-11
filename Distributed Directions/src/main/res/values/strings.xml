@@ -2,8 +2,10 @@
 <resources>
 
     <string name="app_name">Distributed Directions</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_maps">Distributed Directions</string>
     <string name="API_KEY">AIzaSyAjkj7uCckw6oF5RoX7YMeVbx9GrtHClYc</string>
+    <string name="directions_button">Get Directions</string>
+    <string name="geofence_button">Start Geofence</string>
 
 
 </resources>
