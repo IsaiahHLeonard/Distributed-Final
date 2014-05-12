@@ -10,6 +10,8 @@ import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
+import android.net.http.AndroidHttpClient;
+import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,6 +28,16 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +53,7 @@ public class MapsActivity extends FragmentActivity implements
 
     private final static UUID PEBBLE_APP_UUID_DIRECTIONS = UUID.fromString("ab457116-2823-4189-9b18-980eae57f301");
     private final static UUID PEBBLE_APP_UUID_GEOFENCE = UUID.fromString("fd214ce8-7f74-4747-b1e0-d5e1932f1d47");
+
 
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -117,11 +130,17 @@ public class MapsActivity extends FragmentActivity implements
                     Toast toast = Toast.makeText(MapsActivity.this, text, duration);
                     toast.show();
 
+                    NetworkTask task = new NetworkTask();
+                    task.execute("");
+
                     Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
                     while(it.hasNext()){
                         SavedLocation tempLoc = it.next();
                         if(tempLoc.getName() == name) {
                             // TODO: Turn on application
+
+
+
                         }
                     }
 
@@ -453,5 +472,27 @@ public class MapsActivity extends FragmentActivity implements
                 SavedLocation.addLoc(loc);
             }
         }
+    }
+}
+
+
+class NetworkTask extends AsyncTask<String, Void, Void> {
+
+    private static final int SERVERPORT = 23;
+    private static final String SERVER_IP = "137.165.9.105";
+
+    @Override
+    protected Void doInBackground(String... params) {
+        try {
+            InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
+            Socket socket = new Socket(serverAddr, SERVERPORT);
+            String str = "1";
+            PrintWriter out = new PrintWriter(new BufferedWriter(
+                    new OutputStreamWriter(socket.getOutputStream())), true);
+            out.println(str);
+        }catch(Exception e) {
+            Log.e("Socket error: ", e.toString());
+        }
+        return null;
     }
 }
