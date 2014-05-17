@@ -1,6 +1,9 @@
 package com.distributed.directions;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -12,14 +15,6 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-
-
-import com.distributed.directions.AutomatedDevice;
-import com.distributed.directions.SavedLocation;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +38,9 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
      */
     private SavedLocation mLoc;
 
-    private Button saveChangeButton, editLocButton;
+    private Button saveChangeButton, editLocButton, deleteButton, remoteButton;
     private EditText locName;
+    private EditText ipAddress;
     private Spinner devChooser;
     private ArrayAdapter<String> adapter;
     private SavedLocDetailFragListener mListener;
@@ -63,16 +59,12 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
         super.onCreate(savedInstanceState);
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
-            // Load the dummy content specified by the fragment
-            // arguments. In a real-world scenario, use a Loader
-            // to load content from a content provider.
             mLoc = SavedLocation.LOCATION_MAP.get(getArguments().getString(ARG_ITEM_ID));
         }
     }
 
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-
         // Activities containing this fragment must implement its callbacks.
         if (!(activity instanceof SavedLocDetailFragListener)) {
             throw new IllegalStateException("Activity must implement fragment's listener.");
@@ -92,6 +84,11 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
             locName = (EditText) rootView.findViewById(R.id.det_location_name);
             locName.setText(mLoc.getName());
             locName.setEnabled(false);
+
+            ipAddress = (EditText) rootView.findViewById(R.id.ip_address);
+            ipAddress.setText(mLoc.getIp());
+            ipAddress.setEnabled(false);
+
             ((TextView) rootView.findViewById(R.id.det_longitude)).setText(mLoc.getLongitude().toString());
             ((TextView) rootView.findViewById(R.id.det_latitude)).setText(mLoc.getLatitude().toString());
             String act = mLoc.getAutomatedActivity();
@@ -101,8 +98,13 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
             saveChangeButton = (Button) rootView.findViewById(R.id.save_changes_button);
             saveChangeButton.setEnabled(false);
             editLocButton = (Button) rootView.findViewById(R.id.edit_loc_button);
+            deleteButton = (Button) rootView.findViewById(R.id.delete_button);
+            remoteButton = (Button) rootView.findViewById(R.id.remote_start_button);
+
             saveChangeButton.setOnClickListener(this);
             editLocButton.setOnClickListener(this);
+            deleteButton.setOnClickListener(this);
+            remoteButton.setOnClickListener(this);
 
             //Set up spinner for possible use
             List<String> spinnerList = new ArrayList<String>();
@@ -124,6 +126,7 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
         switch (clicked){
             case R.id.edit_loc_button:
                 locName.setEnabled(true);
+                ipAddress.setEnabled(true);
                 editLocButton.setEnabled(false);
                 saveChangeButton.setEnabled(true);
                 devChooser.setSelection(adapter.getPosition(mLoc.getAutomatedActivity()));
@@ -136,6 +139,7 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
                     devChooser.setEnabled(false);
                     SavedLocation oldLoc = mLoc;
                     mLoc = new SavedLocation(newName, oldLoc.getLatitude(), oldLoc.getLongitude(), newDevice);
+                    mLoc.setIp(ipAddress.getText().toString());
                     editLocButton.setEnabled(true);
                     locName.setEnabled(false);
                     saveChangeButton.setEnabled(false);
@@ -150,6 +154,16 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
                     Toast.makeText(getActivity(), "New name must not be blank", Toast.LENGTH_LONG).show();
                 }
                 break;
+            case R.id.delete_button:
+                SharedPreferences prefs = this.getActivity().getSharedPreferences("distributed.directions.saved.locs", 0);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.remove(mLoc.getName());
+                editor.commit();
+                SavedLocation.removeLoc(mLoc);
+                Intent goToList = new Intent(this.getActivity(), SavedLocationListActivity.class);
+                startActivity(goToList);
+                break;
+
             default:
                 break;
         }

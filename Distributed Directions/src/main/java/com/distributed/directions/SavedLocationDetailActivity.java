@@ -70,7 +70,6 @@ public class SavedLocationDetailActivity extends ActionBarActivity implements Sa
     }
 
     public void onLocationChangeMade(SavedLocation newLoc, SavedLocation oldLoc){
-        Log.i("Dog", "cat");
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.locs", 0);
         if (prefs.contains(oldLoc.getName())){
             SharedPreferences.Editor editor = prefs.edit();

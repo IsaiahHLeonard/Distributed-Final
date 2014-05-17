@@ -16,6 +16,7 @@ public class SavedLocation {
     String name;
     Double lat, lon;
     String automatedActivity;
+    String ip;
     boolean isVisited;
 
     /**
@@ -30,13 +31,13 @@ public class SavedLocation {
 
     static {
         // Add 3 sample items.
-        addItem(new SavedLocation("Home", 42.709461, -73.193278));
+        addItem(new SavedLocation("Home", 42.709461, -73.193278, "137.165.9.105"));
 
-        addItem(new SavedLocation("Work", 42.722100, -73.196669));
+        addItem(new SavedLocation("Work", 42.722100, -73.196669, "137.165.9.105"));
 
-        addItem(new SavedLocation("Williams", 42.710849, -73.206668, "Light Switch"));
+        addItem(new SavedLocation("Williams", 42.710849, -73.206668, "Light Switch", "137.165.9.105"));
 
-        addItem(new SavedLocation("Morgan", 42.712051, -73.204737, "Microwave"));
+        addItem(new SavedLocation("Morgan", 42.712051, -73.204737, "Microwave", "137.165.9.105"));
     }
 
     private static void addItem(SavedLocation loc) {
@@ -49,7 +50,7 @@ public class SavedLocation {
         LOCATION_MAP.put(loc.getName(), loc);
     }
 
-    private static void removeLoc(SavedLocation toRemove){
+    public static void removeLoc(SavedLocation toRemove){
         LOCS.remove(toRemove);
         LOCATION_MAP.remove(toRemove.getName());
     }
@@ -73,18 +74,20 @@ public class SavedLocation {
         return true;
     }
 
-    public SavedLocation(String n, Double la, Double lo){
+    public SavedLocation(String n, Double la, Double lo, String ip){
         name = n;
         lat = la;
         lon = lo;
         automatedActivity = "None";
+        this.ip = ip;
     }
 
-    public SavedLocation(String n, Double la, Double lo, String activity){
+    public SavedLocation(String n, Double la, Double lo, String activity, String ip){
         name = n;
         lat = la;
         lon = lo;
         automatedActivity = activity;
+        this.ip = ip;
     }
     //make SavedLocation from delimited version
     public SavedLocation(String delimitedLoc){
@@ -96,6 +99,11 @@ public class SavedLocation {
             automatedActivity = tok.nextToken();
         } else {
             automatedActivity = "None";
+        }
+        if(tok.hasMoreTokens()){
+            ip = tok.nextToken();
+        } else {
+            ip = "137.165.9.105";
         }
     }
 
@@ -111,9 +119,11 @@ public class SavedLocation {
     public String getAutomatedActivity() { return automatedActivity; }
     public void setName(String newName){ name = newName; }
     public void setAutomatedActivity(String newActivity){ automatedActivity = newActivity; }
-    public String delimitedRep() { return (name + ";" + lat.toString() + ";" + lon.toString() + ";" + automatedActivity); }
+    public String delimitedRep() { return (name + ";" + lat.toString() + ";" + lon.toString() + ";" + automatedActivity + ";" + ip); }
     public boolean isVisited(){return isVisited;}
     public void setIsVisited(boolean isVisited){
         this.isVisited = isVisited;
     }
+    public String getIp(){return ip;}
+    public void setIp(String ip){this.ip = ip;}
 }

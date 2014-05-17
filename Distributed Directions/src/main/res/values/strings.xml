@@ -6,6 +6,8 @@
     <string name="API_KEY">AIzaSyAjkj7uCckw6oF5RoX7YMeVbx9GrtHClYc</string>
     <string name="directions_button">Get Directions</string>
     <string name="geofence_button">Start Geofence</string>
+    <string name="delete_button">Delete</string>
+    <string name="remote_button">Remote</string>
 
 
 </resources>

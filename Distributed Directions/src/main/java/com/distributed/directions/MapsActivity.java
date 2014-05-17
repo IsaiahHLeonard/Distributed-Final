@@ -4,19 +4,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
-
-import com.getpebble.android.kit.Constants;
-import com.getpebble.android.kit.PebbleKit;
-import com.getpebble.android.kit.util.PebbleDictionary;
-import com.google.android.gms.location.LocationListener;
 import android.location.LocationManager;
-import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.getpebble.android.kit.PebbleKit;
+import com.getpebble.android.kit.util.PebbleDictionary;
+import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesClient;
 import com.google.android.gms.location.LocationClient;
@@ -27,33 +24,31 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-
 import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+
+/**
+ * Main Activity class for the maps. Shows the map and does all of the
+ * computations of distance, and geofencing.
+ */
 public class MapsActivity extends FragmentActivity implements
         GooglePlayServicesClient.ConnectionCallbacks,
         GooglePlayServicesClient.OnConnectionFailedListener,
         GoogleMap.OnMapLongClickListener,
         LocationListener{
 
+    // Ids for the two apps on the watch app.
     private final static UUID PEBBLE_APP_UUID_DIRECTIONS = UUID.fromString("ab457116-2823-4189-9b18-980eae57f301");
     private final static UUID PEBBLE_APP_UUID_GEOFENCE = UUID.fromString("fd214ce8-7f74-4747-b1e0-d5e1932f1d47");
-
 
     // Milliseconds per second
     private static final int MILLISECONDS_PER_SECOND = 1000;
@@ -63,43 +58,41 @@ public class MapsActivity extends FragmentActivity implements
     private static final long UPDATE_INTERVAL =
             MILLISECONDS_PER_SECOND * UPDATE_INTERVAL_IN_SECONDS;
 
+    // Geofence radius, set to .05 miles
     private static final double GEOFENCE_RADIUS = 0.05;
 
-    private LatLng lastPos;
-
     private LatLng startPos;
-    private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
+    private GoogleMap googleMap;
     LocationRequest mLocationRequest;
     LocationClient mLocationClient;
     boolean mLocationUpdateBool;
-    boolean firstLocationBool;
     boolean directionsApp;
 
-
+    /**
+     * OnCreate method. This is called when activity is first started. This
+     * initializes everything, the map, the locations, and the variables.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        // Gets data from start screen and determines whether it is a directions or geofence
+        // Gets data from start screen and determines whether it is a directions or geofence.
         Intent intentFromStart = getIntent();
         directionsApp = intentFromStart.getBooleanExtra("isDirections", true);
 
         setUpMapIfNeeded();
 
+        // Sets up the map, and location change parameters
         googleMap.setOnMapLongClickListener(this);
-
         mLocationUpdateBool = false;
-
         mLocationRequest = LocationRequest.create();
-        // Use high accuracy
         mLocationRequest.setPriority(
                 LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-        // Set the update interval to 5 seconds
         mLocationRequest.setInterval(UPDATE_INTERVAL);
 
+        // Creates the location client, that handles current location. Waits till it is connected
         mLocationClient = new LocationClient(this, this, this);
-
         mLocationClient.connect();
         try {
             mLocationClient.wait();
@@ -107,6 +100,8 @@ public class MapsActivity extends FragmentActivity implements
             Log.e("Error:", "Could not connect");
         }
 
+        // Opens up the app on the watch depending on functionality. Also loads map with appropriate
+        // markers, destination for directions, and geofence points for geofence
         if(!directionsApp) {
             loadLocations();
             setUpMarks();
@@ -114,31 +109,35 @@ public class MapsActivity extends FragmentActivity implements
         }else{
             PebbleKit.startAppOnPebble(getApplicationContext(), PEBBLE_APP_UUID_DIRECTIONS);
             SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-            double lat = Double.longBitsToDouble(prefs.getLong("destinationLat", 0));
-            double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 0));
-            if(!(lat == 0 && lon == 0)){
+            double lat = Double.longBitsToDouble(prefs.getLong("destinationLat", 200));
+            double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 200));
+            if(!(lat == 200 && lon == 200)){
                 googleMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Destination"));
+
             }
         }
+
+        // If geofence, this starts the listener from watch, message to turn on/off appliance.
+        // If it receives a message, then sends the corresponding message to appliance.
         if(!directionsApp) {
             PebbleKit.PebbleDataReceiver pebbleListener = new PebbleKit.PebbleDataReceiver(PEBBLE_APP_UUID_GEOFENCE) {
                 @Override
                 public void receiveData(final Context context, final int transactionId, final PebbleDictionary data) {
                     String name = data.getString(1);
+                    int onOff = data.getInteger(2).intValue();
                     CharSequence text = "turn on app in " + name;
                     int duration = Toast.LENGTH_LONG;
                     Toast toast = Toast.makeText(MapsActivity.this, text, duration);
                     toast.show();
 
-                    NetworkTask task = new NetworkTask();
-                    task.execute("");
-
                     Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
                     while(it.hasNext()){
                         SavedLocation tempLoc = it.next();
-                        if(tempLoc.getName() == name) {
-                            // TODO: Turn on application
+                        if(tempLoc.getName().equals(name)) {
 
+                            Log.e("onoff: ", onOff + "");
+                            NetworkTask task = new NetworkTask();
+                            task.execute(onOff + "", tempLoc.getIp());
 
 
                         }
@@ -262,7 +261,7 @@ public class MapsActivity extends FragmentActivity implements
                 mLocationClient.requestLocationUpdates(mLocationRequest, this);
             }
         }else{
-            SavedLocation.addLoc(new SavedLocation("New location", latLng.latitude, latLng.longitude));
+            SavedLocation.addLoc(new SavedLocation("New location", latLng.latitude, latLng.longitude, "137.165.9.105"));
             Intent goToList = new Intent(this, SavedLocationListActivity.class);
             startActivity(goToList);
         }
@@ -331,7 +330,6 @@ public class MapsActivity extends FragmentActivity implements
             data.addString(1, "Distance: " + dist + " miles");
             if(angle != -1) {
                 data.addUint32(2, angle);
-                //data.addString(2, angle + "");
             }
             PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_DIRECTIONS, data);
 
@@ -385,17 +383,9 @@ public class MapsActivity extends FragmentActivity implements
      */
     @Override
     public void onLocationChanged(Location location) {
-        // Report to the UI that the location was updated
-        /** Finds distance from start to destination
-        String msg = "Updated Location: " +
-                Double.toString(location.getLatitude()) + "," +
-                Double.toString(location.getLongitude());
-        Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
-        */
         LatLng current = new LatLng(location.getLatitude(), location.getLongitude());
         if(directionsApp) {
             sendAlertToPebble(getDistMessage(current), getDirMessage(current));
-            lastPos = current;
         }else{
             Iterator<SavedLocation> it = SavedLocation.LOCATION_MAP.values().iterator();
             while(it.hasNext()) {
@@ -417,10 +407,6 @@ public class MapsActivity extends FragmentActivity implements
                     }
                 }
             }
-
-
-
-
         }
     }
 
@@ -475,7 +461,11 @@ public class MapsActivity extends FragmentActivity implements
     }
 }
 
-
+/**
+ * NetworkTask class that creates a new thread and calls
+ * the request to the correpsonding ip address. This sends a message
+ * to turn on the appliance. Input to doInBackground is on/off and ip address
+ */
 class NetworkTask extends AsyncTask<String, Void, Void> {
 
     private static final int SERVERPORT = 23;
@@ -484,9 +474,11 @@ class NetworkTask extends AsyncTask<String, Void, Void> {
     @Override
     protected Void doInBackground(String... params) {
         try {
-            InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
+            String str = params[0];
+            String ipAddress = params[1];
+            InetAddress serverAddr = InetAddress.getByName(ipAddress);
             Socket socket = new Socket(serverAddr, SERVERPORT);
-            String str = "1";
+            Log.e("OnOff: ", str);
             PrintWriter out = new PrintWriter(new BufferedWriter(
                     new OutputStreamWriter(socket.getOutputStream())), true);
             out.println(str);
