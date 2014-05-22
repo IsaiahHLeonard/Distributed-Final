@@ -410,9 +410,7 @@ public class MapsActivity extends FragmentActivity implements
                             data.addUint32(3, size);
                             int i = 4;
                             while (devIt.hasNext()) {
-                                String next = devIt.next();
-                                data.addString(i, next);
-                                Log.e("item ", next);
+                                data.addString(i, devIt.next());
                                 i++;
                             }
                             PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_GEOFENCE, data);
@@ -493,4 +491,3 @@ public class MapsActivity extends FragmentActivity implements
         }
     }
 }
-

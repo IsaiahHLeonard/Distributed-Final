@@ -31,13 +31,7 @@ public class SavedLocation {
 
     //Sample locations
     static {
-        addItem(new SavedLocation("Home", 42.709461, -73.193278));
-
-        addItem(new SavedLocation("Work", 42.722100, -73.196669));
-
-        addItem(new SavedLocation("Williams", 42.710849, -73.206668, "Light Switch"));
-
-        addItem(new SavedLocation("Morgan", 42.712051, -73.204737, "Microwave"));
+        addItem(new SavedLocation("Morgan", 42.712051, -73.204737, "Light Switch"));
     }
 
     //Simple methods to add,remove,or edit saved locations
