@@ -6,8 +6,32 @@
     <string name="API_KEY">AIzaSyAjkj7uCckw6oF5RoX7YMeVbx9GrtHClYc</string>
     <string name="directions_button">Get Directions</string>
     <string name="geofence_button">Start Geofence</string>
+    <string name="location_button">Locations</string>
+    <string name="devices_button">Devices</string>
+    <string name="create_device_button">Create Device</string>
+
     <string name="delete_button">Delete</string>
     <string name="remote_button">Remote</string>
+    <string name="title_savedlocation_list">SavedLocations</string>
+    <string name="title_savedlocation_detail">SavedLocation Detail</string>
+    <string name="title_activity_create_automated">CreateAutomatedActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="port_hint">Port #</string>
+    <string name="ip_hint">URL/IP of New Activity</string>
+    <string name="activity_name_hint">Name of New Activity</string>
+    <string name="create_automated_title">Create Automated Activity</string>
+    <string name="auto_dev_label">Automated Activity: </string>
+    <string name="none">None</string>
+    <string name="lon">Longitude: </string>
+    <string name="lat">Latitude: </string>
+    <string name="blank" />
+    <string name="loc_name">Location Name</string>
+    <string name="set_dev_state_but">Set Device State</string>
+    <string name="dev_states">Device States: </string>
+    <string name="port_num">Port Number: </string>
+    <string name="address_label">Address: </string>
+    <string name="title_automateddevice_list">Automated Devices</string>
+    <string name="title_automateddevice_detail">Automated Device</string>
 
 
 </resources>

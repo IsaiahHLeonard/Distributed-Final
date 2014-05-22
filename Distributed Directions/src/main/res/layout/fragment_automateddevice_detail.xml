@@ -7,8 +7,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="@string/loc_name"
-        android:id="@+id/location_name"
+        android:id="@+id/device_name"
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="5dp"/>
 
@@ -19,13 +18,13 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/lat"
+            android:text="@string/address_label"
             android:layout_marginRight="10dp" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/blank"
-            android:id="@+id/latitude"
+            android:id="@+id/device_address"
             android:layout_marginRight="0dp" />
     </LinearLayout>
 
@@ -34,17 +33,17 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:layout_marginTop="5dp">
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Longitude: "
-        android:layout_marginRight="10dp" />
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:id="@+id/longitude"
-        android:layout_marginLeft="0dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/port_num"
+            android:layout_marginRight="10dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:id="@+id/device_port"
+            android:layout_marginLeft="0dp" />
     </LinearLayout>
 
     <LinearLayout
@@ -54,15 +53,23 @@
         android:layout_marginTop="5dp">
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/auto_dev_label"
-            android:layout_marginRight="10dp" />
-        <TextView
+            android:layout_height="match_parent"
+            android:text="@string/dev_states"
+            android:layout_marginLeft="0dp" />
+
+        <Spinner
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/none"
-            android:id="@+id/associated_activity"
-            android:layout_marginLeft="0dp" />
+            android:layout_marginRight="10dp"
+            android:id="@+id/device_state_spinner"/>
+
+
     </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/set_dev_state_but"
+        android:id="@+id/set_device_state_button"/>
 
 </LinearLayout>

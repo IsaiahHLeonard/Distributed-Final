@@ -17,4 +17,27 @@
         android:text="@string/geofence_button"
         android:id="@+id/geofence_button"
         android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/location_button"
+        android:id="@+id/location_list_button"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/devices_button"
+        android:id="@+id/device_list_button"
+        android:layout_gravity="center_horizontal" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/create_device_button"
+        android:id="@+id/create_device_button"
+        android:layout_gravity="center_horizontal" />
+
+
 </LinearLayout>

@@ -9,6 +9,8 @@ import android.os.AsyncTask;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.getpebble.android.kit.PebbleKit;
@@ -34,6 +36,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -134,12 +137,17 @@ public class MapsActivity extends FragmentActivity implements
                     while(it.hasNext()){
                         SavedLocation tempLoc = it.next();
                         if(tempLoc.getName().equals(name)) {
-
-                            Log.e("onoff: ", onOff + "");
-                            NetworkTask task = new NetworkTask();
-                            task.execute(onOff + "", tempLoc.getIp());
-
-
+                            AutomatedDevice mDev = AutomatedDevice.DEVICE_MAP.get(tempLoc.getAutomatedActivity());
+                            DeviceRequest request = new DeviceRequest();
+                            String serverResponse = "";
+                            try {
+                                serverResponse = request.execute(mDev.getAddress(), String.valueOf(mDev.getPortNum()), onOff+"").get(3000, TimeUnit.MILLISECONDS);
+                            } catch (Exception e){
+                                Log.e("onClick", "Error getting server response: " + e.toString());
+                            }
+                            if (!serverResponse.startsWith("OK")){
+                                Toast.makeText(MapsActivity.this, "Error setting device", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
 
@@ -147,8 +155,6 @@ public class MapsActivity extends FragmentActivity implements
             };
             PebbleKit.registerReceivedDataHandler(this, pebbleListener);
         }
-
-
     }
 
     @Override
@@ -367,11 +373,6 @@ public class MapsActivity extends FragmentActivity implements
         double lon = Double.longBitsToDouble(prefs.getLong("destinationLong", 0));
         double angleToDest = getAngleOfLineBetweenTwoPoints(current, new LatLng(lat, lon));
         return (int) angleToDest;
-        /**
-        double direction = getAngleOfLineBetweenTwoPoints(lastPos, current);
-        double actual = (angleToDest - direction + 450.0)%360;
-
-        return (int) actual;*/
     }
 
     /**
@@ -459,32 +460,21 @@ public class MapsActivity extends FragmentActivity implements
             }
         }
     }
-}
 
-/**
- * NetworkTask class that creates a new thread and calls
- * the request to the correpsonding ip address. This sends a message
- * to turn on the appliance. Input to doInBackground is on/off and ip address
- */
-class NetworkTask extends AsyncTask<String, Void, Void> {
-
-    private static final int SERVERPORT = 23;
-    private static final String SERVER_IP = "137.165.9.105";
-
-    @Override
-    protected Void doInBackground(String... params) {
-        try {
-            String str = params[0];
-            String ipAddress = params[1];
-            InetAddress serverAddr = InetAddress.getByName(ipAddress);
-            Socket socket = new Socket(serverAddr, SERVERPORT);
-            Log.e("OnOff: ", str);
-            PrintWriter out = new PrintWriter(new BufferedWriter(
-                    new OutputStreamWriter(socket.getOutputStream())), true);
-            out.println(str);
-        }catch(Exception e) {
-            Log.e("Socket error: ", e.toString());
+    /**
+     * Loads the devices from the shared prefrences
+     */
+    private void loadDevices() {
+        SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
+        Map<String, ?> devMap = prefs.getAll();
+        Set<String> keys = devMap.keySet();
+        String next;
+        for (String s : keys) {
+            next = prefs.getString(s, "");
+            if (next.length() > 0) {
+                com.distributed.directions.AutomatedDevice.addDevice(new AutomatedDevice(next));
+            }
         }
-        return null;
     }
 }
+

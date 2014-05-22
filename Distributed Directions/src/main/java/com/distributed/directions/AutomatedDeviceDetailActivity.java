@@ -3,27 +3,26 @@ package com.distributed.directions;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.NavUtils;
+import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.MenuItem;
-import com.distributed.directions.SavedLocation;
 
 /**
- * An activity representing a single SavedLocation detail screen. This
+ * An activity representing a single AutomatedDevice detail screen. This
  * activity is only used on handset devices. On tablet-size devices,
  * item details are presented side-by-side with a list of items
- * in a {@link com.distributed.directions.SavedLocationListActivity}.
+ * in a {@link AutomatedDeviceListActivity}.
  * <p>
  * This activity is mostly just a 'shell' activity containing nothing
- * more than a {@link com.distributed.directions.SavedLocationDetailFragment}.
+ * more than a {@link AutomatedDeviceDetailFragment}.
  */
-public class SavedLocationDetailActivity extends ActionBarActivity implements SavedLocationDetailFragment.SavedLocDetailFragListener{
+public class AutomatedDeviceDetailActivity extends ActionBarActivity implements AutomatedDeviceDetailFragment.AutomatedDevDetailFragListener{
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_savedlocation_detail);
+        setContentView(R.layout.activity_automateddevice_detail);
 
         // Show the Up button in the action bar.
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -41,13 +40,13 @@ public class SavedLocationDetailActivity extends ActionBarActivity implements Sa
             // Create the detail fragment and add it to the activity
             // using a fragment transaction.
             Bundle arguments = new Bundle();
-            arguments.putString(SavedLocationDetailFragment.ARG_ITEM_ID,
-                    getIntent().getStringExtra(SavedLocationDetailFragment.ARG_ITEM_ID));
-            SavedLocationDetailFragment fragment = new SavedLocationDetailFragment();
+            arguments.putString(AutomatedDeviceDetailFragment.ARG_ITEM_ID,
+                    getIntent().getStringExtra(AutomatedDeviceDetailFragment.ARG_ITEM_ID));
+            AutomatedDeviceDetailFragment fragment = new AutomatedDeviceDetailFragment();
 
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.savedlocation_detail_container, fragment)
+                    .add(R.id.automateddevice_detail_container, fragment)
                     .commit();
         }
     }
@@ -63,18 +62,18 @@ public class SavedLocationDetailActivity extends ActionBarActivity implements Sa
             //
             // http://developer.android.com/design/patterns/navigation.html#up-vs-back
             //
-            NavUtils.navigateUpTo(this, new Intent(this, SavedLocationListActivity.class));
+            NavUtils.navigateUpTo(this, new Intent(this, com.distributed.directions.AutomatedDeviceListActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    public void onLocationChangeMade(SavedLocation newLoc, SavedLocation oldLoc){
-        SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.locs", 0);
-        if (prefs.contains(oldLoc.getName())){
+    public void onDeviceChangeMade(AutomatedDevice newDev, AutomatedDevice oldDev){
+        SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
+        if (prefs.contains(oldDev.getName())){
             SharedPreferences.Editor editor = prefs.edit();
-            editor.remove(oldLoc.getName());
-            editor.putString(newLoc.getName(), newLoc.delimitedRep());
+            editor.remove(oldDev.getName());
+            editor.putString(newDev.getName(), newDev.delimitedRep());
             boolean success = editor.commit();
             if (!success){
                 Log.i("ERROR:  ", "Failed to update shared preferences");
@@ -82,7 +81,9 @@ public class SavedLocationDetailActivity extends ActionBarActivity implements Sa
 
 
         } else {
-            Log.i("ERROR: ", "Shared Prefs did not have " + oldLoc.getName());
+            Log.i("ERROR: ", "Shared Prefs did not have " + oldDev.getName());
         }
+        //AutomatedDeviceListFragment frag = (AutomatedDeviceListFragment) getSupportFragmentManager().findFragmentById(R.id.automateddevice_list);
+        //frag.updateLocAdapter();
     }
 }

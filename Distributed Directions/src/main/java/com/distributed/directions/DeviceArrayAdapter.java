@@ -14,17 +14,17 @@ import java.util.List;
  * Custom array adapter for SavedLocations. Used tutorial at
  * http://www.javacodegeeks.com/2013/09/android-listview-with-adapter-example.html
  */
-public class LocationArrayAdapter extends ArrayAdapter<SavedLocation> {
+public class DeviceArrayAdapter extends ArrayAdapter<AutomatedDevice> {
     Context mContext;
     int layoutResourceId;
-    List<SavedLocation> locs = null;
+    List<AutomatedDevice> devs = null;
 
-    public LocationArrayAdapter(Context mContext, int layoutResourceId, List<SavedLocation> l){
+    public DeviceArrayAdapter(Context mContext, int layoutResourceId, List<AutomatedDevice> l){
         super(mContext, layoutResourceId, l);
 
         this.mContext = mContext;
         this.layoutResourceId = layoutResourceId;
-        this.locs = l;
+        this.devs = l;
     }
 
     @Override
@@ -36,18 +36,19 @@ public class LocationArrayAdapter extends ArrayAdapter<SavedLocation> {
         }
 
         //Location based on position
-        SavedLocation loc = locs.get(position);
+        AutomatedDevice dev = devs.get(position);
 
         //Get TextViews and fill them in
-        TextView locName = (TextView) convertView.findViewById(R.id.location_name);
-        TextView lat = (TextView) convertView.findViewById(R.id.latitude);
-        TextView lon = (TextView) convertView.findViewById(R.id.longitude);
-        TextView act = (TextView) convertView.findViewById(R.id.associated_activity);
+        TextView locName = (TextView) convertView.findViewById(R.id.device_name);
+        TextView address = (TextView) convertView.findViewById(R.id.device_address);
+        TextView portNum = (TextView) convertView.findViewById(R.id.device_port);
 
-        locName.setText(loc.getName());
-        lat.setText(loc.getLatitude().toString());
-        lon.setText(loc.getLongitude().toString());
-        act.setText(loc.getAutomatedActivity());
+
+        locName.setText(dev.getName());
+        address.setText(dev.getAddress());
+        portNum.setText(String.valueOf(dev.getPortNum()));
+
+
 
         return convertView;
 

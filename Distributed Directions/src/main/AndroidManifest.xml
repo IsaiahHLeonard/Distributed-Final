@@ -34,6 +34,25 @@
                 android:value="com.distributed.directions.SavedLocationListActivity" />
         </activity>
 
+        <activity
+            android:name="com.distributed.directions.CreateAutomatedDevice"
+            android:label="@string/title_activity_create_automated" >
+        </activity>
+
+        <activity
+            android:name="com.distributed.directions.AutomatedDeviceListActivity"
+            android:label="@string/title_automateddevice_list" >
+        </activity>
+
+        <activity
+            android:name="com.distributed.directions.AutomatedDeviceDetailActivity"
+            android:label="@string/title_automateddevice_detail"
+            android:parentActivityName="com.distributed.directions.AutomatedDeviceListActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.distributed.directions.AutomatedDeviceListActivity" />
+        </activity>
+
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
