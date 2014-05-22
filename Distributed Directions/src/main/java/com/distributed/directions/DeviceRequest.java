@@ -11,22 +11,24 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
-
+/*
+ * DeviceRequest is a background task/thread that handles communicating with the arduino servers
+ */
 public class DeviceRequest extends AsyncTask<String, Void, String> {
 
     private static final int SERVERPORT = 9999;
     private static final String SERVER_IP = "137.165.9.105";
 
+    //Has to take variable number of parameters
+    //We always give (ipAddress, portNum, command/message)
     @Override
     protected String doInBackground(String... input) {
         Log.i("DeviceRequest", "in Background: " + input[0] + " " + input[1] + " " +input[2]);
 
         return executeRequest(input[0], Integer.parseInt(input[1]), input[2]);
-        //return null;
     }
 
     //executes background request to arduino server
-    //in this case, sending message to setup, trying to get possible device states
     private String executeRequest(String ipAddress, int portNumber, String command) {
 
         String response = "";
@@ -46,12 +48,12 @@ public class DeviceRequest extends AsyncTask<String, Void, String> {
             if (command.equals("setup")){
                 Log.i("DeviceRequest", "Setting up new Device");
                 if(response.startsWith("OK:")){
-                    //format of response is: "OK: <semi-colon delimited device states"
+                    //format of response is: "OK: <semi-colon delimited device states>"
+                    //We want to just return the the list of device states
                     response = response.substring(response.indexOf(" ")+1);
 
 
                 } else {
-                    //Toast.makeText(this, "Bad setup connection", Toast.LENGTH_LONG).show();
                     Log.i("DeviceRequest", "Setup connection error");
                 }
             }

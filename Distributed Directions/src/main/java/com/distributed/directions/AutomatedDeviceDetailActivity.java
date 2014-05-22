@@ -68,6 +68,8 @@ public class AutomatedDeviceDetailActivity extends ActionBarActivity implements 
         return super.onOptionsItemSelected(item);
     }
 
+
+    //Simple listener interface method to allow changes to propagate to the entire app and its shared preferences files
     public void onDeviceChangeMade(AutomatedDevice newDev, AutomatedDevice oldDev){
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
         if (prefs.contains(oldDev.getName())){
@@ -83,7 +85,5 @@ public class AutomatedDeviceDetailActivity extends ActionBarActivity implements 
         } else {
             Log.i("ERROR: ", "Shared Prefs did not have " + oldDev.getName());
         }
-        //AutomatedDeviceListFragment frag = (AutomatedDeviceListFragment) getSupportFragmentManager().findFragmentById(R.id.automateddevice_list);
-        //frag.updateLocAdapter();
     }
 }

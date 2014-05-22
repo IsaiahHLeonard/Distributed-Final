@@ -66,7 +66,6 @@ public class SavedLocationListActivity extends FragmentActivity
                     .setActivateOnItemClick(true);
         }
 
-        // TODO: If exposing deep links into your app, handle intents here.
     }
 
     /**
@@ -117,12 +116,11 @@ public class SavedLocationListActivity extends FragmentActivity
             editor.putString(loc.getName(), loc.delimitedRep());
         }
         if (! editor.commit()){
-            Log.i("ERROR:  ", "Failed in testSharedPrefsLocations");
+            Log.e("ERROR:  ", "Failed in testSharedPrefsLocations");
         }
     }
 
     private void logSharedPrefsLocations(){
-        Log.i("BLAC", "BLAH");
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.locs", 0);
         Map<String, ?> locMap = prefs.getAll();
         Set<String> keys = locMap.keySet();
@@ -137,7 +135,6 @@ public class SavedLocationListActivity extends FragmentActivity
 
     }
     public void onLocationChangeMade(SavedLocation newLoc, SavedLocation oldLoc){
-        Log.i("Cat", "cat");
         testSharedPrefsLocations();
         logSharedPrefsLocations();
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.locs", 0);
@@ -147,12 +144,12 @@ public class SavedLocationListActivity extends FragmentActivity
             editor.putString(newLoc.getName(), newLoc.delimitedRep());
             boolean success = editor.commit();
             if (!success){
-                Log.i("ERROR:  ", "Failed to update shared preferences");
+                Log.e("ERROR:  ", "Failed to update shared preferences");
             }
             
 
         } else {
-            Log.i("ERROR: ", "Shared Prefs did not have " + oldLoc.getName());
+            Log.e("ERROR: ", "Shared Prefs did not have " + oldLoc.getName());
         }
         SavedLocationListFragment frag = (SavedLocationListFragment) getSupportFragmentManager().findFragmentById(R.id.savedlocation_list);
         frag.updateLocAdapter();

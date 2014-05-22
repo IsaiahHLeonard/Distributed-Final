@@ -11,8 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Start screen activity. Consists of 2 buttons to determine if we want to get directions or start
- * the geofence app.
+ * Start screen activity. Consists of 5 buttons which give user access to the different parts of the app.
+ * 1. Directions 2. GeoFence tracking 3. List of SavedLocations 4. List of AutomatedDevices 5. Create new device
  */
 public class StartScreenActivity extends FragmentActivity {
 

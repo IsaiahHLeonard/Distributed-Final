@@ -44,7 +44,6 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
     private ArrayAdapter<String> adapter;
     private SavedLocDetailFragListener mListener;
 
-    //private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -76,9 +75,8 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_savedlocation_detail, container, false);
-        //setUpMapIfNeeded();
 
-        // Show the content
+        // Show the content by getting appropriate UI elements and filling them in
         if (mLoc != null) {
             locName = (EditText) rootView.findViewById(R.id.det_location_name);
             locName.setText(mLoc.getName());
@@ -88,8 +86,6 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
             ((TextView) rootView.findViewById(R.id.det_latitude)).setText(mLoc.getLatitude().toString());
             String act = mLoc.getAutomatedActivity();
             if (act.length() == 0) { act = "None"; }
-            //googleMap.addMarker(new MarkerOptions().position(
-                   // new LatLng(mLoc.getLatitude(), mLoc.getLongitude())).title(mLoc.getName()));
             saveChangeButton = (Button) rootView.findViewById(R.id.save_changes_button);
             saveChangeButton.setEnabled(false);
             editLocButton = (Button) rootView.findViewById(R.id.edit_loc_button);
@@ -117,6 +113,8 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
     public void onClick(View v){
         int clicked = v.getId();
         switch (clicked){
+
+            //If user wants to edit location, enable the appropriate fields
             case R.id.edit_loc_button:
                 locName.setEnabled(true);
                 editLocButton.setEnabled(false);
@@ -124,6 +122,9 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
                 devChooser.setSelection(adapter.getPosition(mLoc.getAutomatedActivity()));
                 devChooser.setEnabled(true);
                 break;
+
+            //When user tries to save changes, make sure that they have entered data appropriately, then try to update
+            //our sets of saved locations
             case R.id.save_changes_button:
                 String newName = locName.getText().toString();
                 if (newName.length() > 0){
@@ -145,6 +146,8 @@ public class SavedLocationDetailFragment extends Fragment implements View.OnClic
                     Toast.makeText(getActivity(), "New name must not be blank", Toast.LENGTH_LONG).show();
                 }
                 break;
+
+            //Delete the saved location
             case R.id.delete_button:
                 SharedPreferences prefs = this.getActivity().getSharedPreferences("distributed.directions.saved.locs", 0);
                 SharedPreferences.Editor editor = prefs.edit();

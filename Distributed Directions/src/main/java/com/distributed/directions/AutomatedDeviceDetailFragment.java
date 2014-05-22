@@ -31,17 +31,16 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
     public static final String ARG_ITEM_ID = "device_name";
 
     /**
-     * The location content this fragment is presenting.
+     * The device this fragment is presenting.
      */
     private AutomatedDevice mDev;
 
+    //variables for the UI elements
     private Button setDeviceStateButton;
     private TextView devName;
     private Spinner stateChooser;
     private ArrayAdapter<String> adapter;
     private AutomatedDevDetailFragListener mListener;
-
-    //private GoogleMap googleMap; // Might be null if Google Play services APK is not available.
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -55,9 +54,6 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
         super.onCreate(savedInstanceState);
 
         if (getArguments().containsKey(ARG_ITEM_ID)) {
-            // Load the dummy content specified by the fragment
-            // arguments. In a real-world scenario, use a Loader
-            // to load content from a content provider.
             mDev = AutomatedDevice.DEVICE_MAP.get(getArguments().getString(ARG_ITEM_ID));
         }
     }
@@ -77,9 +73,8 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_automateddevice_detail, container, false);
-        //setUpMapIfNeeded();
 
-        // Show the content
+        // Show the content by filling in appropriate values from the device being displayed in this fragment
         if (mDev != null) {
             devName = (TextView) rootView.findViewById(R.id.device_name);
             devName.setText(mDev.getName());
@@ -89,6 +84,7 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
             setDeviceStateButton = (Button) rootView.findViewById(R.id.set_device_state_button);
             setDeviceStateButton.setOnClickListener(this);
 
+            //Fill spinner with possible states for this device
             ArrayList<String> spinnerList = mDev.getStateList();
             adapter = new ArrayAdapter<String>(container.getContext(), android.R.layout.simple_spinner_item, spinnerList);
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -99,6 +95,7 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
         return rootView;
     }
 
+    //When the user clicks the set-state button, send message to device to set its state appropriately
     public void onClick(View v){
         int clicked = v.getId();
         String selectedState = stateChooser.getSelectedItem().toString();
@@ -110,6 +107,8 @@ public class AutomatedDeviceDetailFragment extends Fragment implements View.OnCl
         } catch (Exception e){
             Log.e("onClick", "Error getting server response: " + e.toString());
         }
+
+        //Our protocol has the server responding with 'OK' when it correctly processes a message and sets the state appropriately
         if (!serverResponse.startsWith("OK")){
             Toast.makeText(getActivity(), "Error setting device", Toast.LENGTH_SHORT).show();
         }

@@ -44,11 +44,6 @@ public class AutomatedDeviceListActivity extends FragmentActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_automateddevice_list);
         //Read in SharedPreferences to get AutomatedDevices. Then load into ArrayList
-        SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
-        SharedPreferences.Editor eraser = prefs.edit();
-        eraser.clear();
-        eraser.commit();
-
         this.loadDevices();
 
         //Test
@@ -75,6 +70,7 @@ public class AutomatedDeviceListActivity extends FragmentActivity
 
     @Override
     public void onResume(){
+        //If the app is resumed, we need to update the list adapter in case changes have been made to the list of devices (eg: new device added)
         super.onResume();
         AutomatedDeviceListFragment frag = (AutomatedDeviceListFragment) getSupportFragmentManager().findFragmentById(R.id.automateddevice_list);
         frag.updateDevAdapter();
@@ -107,6 +103,7 @@ public class AutomatedDeviceListActivity extends FragmentActivity
         }
     }
 
+    //Simple method to load in all the devices saved in sharedpreferences for use
     private void loadDevices() {
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
         Map<String, ?> devMap = prefs.getAll();
@@ -121,6 +118,7 @@ public class AutomatedDeviceListActivity extends FragmentActivity
         }
     }
 
+    //Testing methods to make sure that shared preferences is working
     private void testSharedPrefsDevices(){
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
         SharedPreferences.Editor editor = prefs.edit();
@@ -131,7 +129,6 @@ public class AutomatedDeviceListActivity extends FragmentActivity
             Log.i("ERROR:  ", "Failed in testSharedPrefsDevices");
         }
     }
-
     private void logSharedPrefsDevices(){
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
         Map<String, ?> devMap = prefs.getAll();
@@ -146,6 +143,8 @@ public class AutomatedDeviceListActivity extends FragmentActivity
         }
 
     }
+
+    //Listener interface method to make sure that changes made in the detail fragment get saved appropriately and update the UI
     public void onDeviceChangeMade(AutomatedDevice newDev, AutomatedDevice oldDev){
         testSharedPrefsDevices();
         logSharedPrefsDevices();

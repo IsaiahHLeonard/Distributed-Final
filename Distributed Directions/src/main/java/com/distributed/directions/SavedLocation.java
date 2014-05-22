@@ -12,24 +12,25 @@ import java.util.StringTokenizer;
 
 
 public class SavedLocation {
-    //ToDo: add an automated activity class, or something equivalent
+    //Simple class variables/data
     String name;
     Double lat, lon;
     String automatedActivity;
     boolean isVisited;
 
     /**
-     * An array of sample (dummy) items.
+     * An array of SavedLocations
      */
     public static List<SavedLocation> LOCS = new ArrayList<SavedLocation>();
 
     /**
-     * A map of sample (dummy) items, by ID.
+     * A map of Saved Locations, key is name, value is semi-colon delimited representation
      */
     public static Map<String, SavedLocation> LOCATION_MAP = new HashMap<String, SavedLocation>();
 
+
+    //Sample locations
     static {
-        // Add 3 sample items.
         addItem(new SavedLocation("Home", 42.709461, -73.193278));
 
         addItem(new SavedLocation("Work", 42.722100, -73.196669));
@@ -39,11 +40,11 @@ public class SavedLocation {
         addItem(new SavedLocation("Morgan", 42.712051, -73.204737, "Microwave"));
     }
 
+    //Simple methods to add,remove,or edit saved locations
     private static void addItem(SavedLocation loc) {
         LOCS.add(loc);
         LOCATION_MAP.put(loc.getName(), loc);
     }
-
     private static void addItem(SavedLocation loc, int index){
         LOCS.add(index, loc);
         LOCATION_MAP.put(loc.getName(), loc);
@@ -53,7 +54,6 @@ public class SavedLocation {
         LOCS.remove(toRemove);
         LOCATION_MAP.remove(toRemove.getName());
     }
-
     public static boolean updateMap(SavedLocation newLoc, SavedLocation oldLoc){
         if (!newLoc.getName().equals(oldLoc.getName()) && LOCATION_MAP.containsKey(newLoc.getName())){
             return false;
@@ -63,7 +63,6 @@ public class SavedLocation {
         addItem(newLoc, index);
         return true;
     }
-
     public static boolean addLoc(SavedLocation newLoc){
         if (LOCATION_MAP.containsKey(newLoc.getName())){
             return false;
@@ -73,6 +72,7 @@ public class SavedLocation {
         return true;
     }
 
+    //Multiple constructors for variable number of parameters
     public SavedLocation(String n, Double la, Double lo){
         name = n;
         lat = la;
@@ -112,6 +112,7 @@ public class SavedLocation {
     public void setName(String newName){ name = newName; }
     public void setAutomatedActivity(String newActivity){ automatedActivity = newActivity; }
     public String delimitedRep() { return (name + ";" + lat.toString() + ";" + lon.toString() + ";" + automatedActivity ); }
+    //These methods are used so we know whether or not to trigger a geofence
     public boolean isVisited(){return isVisited;}
     public void setIsVisited(boolean isVisited){
         this.isVisited = isVisited;

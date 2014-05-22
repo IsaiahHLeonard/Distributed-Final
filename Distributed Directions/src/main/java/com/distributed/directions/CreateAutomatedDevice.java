@@ -23,9 +23,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.concurrent.TimeUnit;
 
+/* This class represents an activity which allows the user to create a new device by giving an ip address
+* and port number. A setup message is sent and the reply contains possible device states. The new device is saved.
+ */
 public class CreateAutomatedDevice extends ActionBarActivity implements View.OnClickListener{
     private Button submitButton;
     private String serverResponse;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,62 +38,9 @@ public class CreateAutomatedDevice extends ActionBarActivity implements View.OnC
         submitButton.setOnClickListener(this);
 
     }
-    private class AsyncRequest extends AsyncTask<String, Void, String> {
 
-        private static final int SERVERPORT = 9999;
-        private static final String SERVER_IP = "137.165.9.105";
-
-        @Override
-        protected String doInBackground(String... input) {
-            Log.i("AsyncRequest", "in Background");
-
-            return executeRequest(input[0], Integer.parseInt(input[1]), input[2]);
-            //return null;
-        }
-
-        //executes background request to arduino server
-        //in this case, sending message to setup, trying to get possible device states
-        private String executeRequest(String ipAddress, int portNumber, String command) {
-
-            String response = "";
-            try {
-                InetAddress serverAddr = InetAddress.getByName(ipAddress);
-                Socket socket = new Socket(serverAddr, portNumber);
-                Log.e("OnOff: ", command);
-                PrintWriter out = new PrintWriter(new BufferedWriter(
-                        new OutputStreamWriter(socket.getOutputStream())), true);
-                out.println(command);
-
-                //Wait between sending message and reading input
-                SystemClock.sleep(1000);
-
-                BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                response = in.readLine();
-
-                if (command.equals("setup")){
-                    Log.i("AsyncRequest", "Setting up new Device");
-                    if(response.startsWith("OK:")){
-                        //format of response is: "OK: <semi-colon delimited device states"
-                        response = response.substring(response.indexOf(" ")+1);
-
-
-                    } else {
-                        //Toast.makeText(this, "Bad setup connection", Toast.LENGTH_LONG).show();
-                        Log.i("AsyncRequest", "Setup connection error");
-                    }
-                }
-                in.close();
-                out.close();
-                socket.close();
-            } catch (Exception e) {
-                Log.e("Socket error: ", e.toString());
-            }
-            return response;
-
-        }
-
-    }
-
+    //When the user clicks submit new device, we must first make sure that the parameters they have given are appropriate. If they are
+    //then communicate with device to set it up/get possible device states
     public void onClick(View v) {
         String address = ((EditText) findViewById(R.id.new_address)).getText().toString();
         String name = ((EditText) findViewById(R.id.new_activity_name)).getText().toString();
@@ -107,8 +58,10 @@ public class CreateAutomatedDevice extends ActionBarActivity implements View.OnC
             Toast.makeText(this, "Name must not be the same as another device", Toast.LENGTH_LONG).show();
         } else {
 
+                //new background request task to communicate with arduino
                 DeviceRequest request = new DeviceRequest();
                 try {
+                    //Limit time to 3 seconds. If longer, likely an error of some sort
                     serverResponse = request.execute(address, portNum, "setup").get(3000, TimeUnit.MILLISECONDS);
                 } catch (Exception e){
                     Log.e("onClick", "Error getting server response: " + e.toString());
@@ -125,7 +78,7 @@ public class CreateAutomatedDevice extends ActionBarActivity implements View.OnC
                     } else {
 
                     }
-                    //Todo: Knock us back to StartScreenActivity
+                    //Knock us back to list of devices
                     Intent deviceListIntent = new Intent(this, AutomatedDeviceListActivity.class);
                     startActivity(deviceListIntent);
                 } else {
@@ -136,6 +89,7 @@ public class CreateAutomatedDevice extends ActionBarActivity implements View.OnC
             }
         }
 
+    //Write new device to shared preferences
     private Boolean writeDevToSharedPrefs(AutomatedDevice device) {
         SharedPreferences prefs = this.getSharedPreferences("distributed.directions.saved.devices", 0);
         SharedPreferences.Editor editor = prefs.edit();

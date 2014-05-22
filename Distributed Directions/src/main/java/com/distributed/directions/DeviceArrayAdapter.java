@@ -11,7 +11,7 @@ import java.util.List;
 
 /**
  * Created by isaiahleonard on 5/4/14.
- * Custom array adapter for SavedLocations. Used tutorial at
+ * Custom array adapter for AutomatedDevices; used for filling in UI components for list items. Used tutorial at
  * http://www.javacodegeeks.com/2013/09/android-listview-with-adapter-example.html
  */
 public class DeviceArrayAdapter extends ArrayAdapter<AutomatedDevice> {
