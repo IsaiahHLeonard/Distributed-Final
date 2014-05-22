@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- From: file:/home/nico/Documents/cs339/final/DistributedDirections/app/src/main/res/values/strings.xml -->
+    <!-- From: file:/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/main/res/values/strings.xml -->
     <eat-comment />
 
     <string name="app_name">PEBBLE_SPORTS_SDK</string>

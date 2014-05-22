@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/Distributed Directions/Distributed Directions.iml" filepath="$PROJECT_DIR$/Distributed Directions/Distributed Directions.iml" />
       <module fileurl="file://$PROJECT_DIR$/Distributed-Final.iml" filepath="$PROJECT_DIR$/Distributed-Final.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>
 </project>

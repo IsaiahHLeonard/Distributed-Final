@@ -33,6 +33,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.text.DecimalFormat;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -127,8 +128,8 @@ public class MapsActivity extends FragmentActivity implements
                 @Override
                 public void receiveData(final Context context, final int transactionId, final PebbleDictionary data) {
                     String name = data.getString(1);
-                    int onOff = data.getInteger(2).intValue();
-                    CharSequence text = "turn on app in " + name;
+                    String onOff = data.getString(2);
+                    CharSequence text = "turn " + onOff + " in " + name;
                     int duration = Toast.LENGTH_LONG;
                     Toast toast = Toast.makeText(MapsActivity.this, text, duration);
                     toast.show();
@@ -150,7 +151,6 @@ public class MapsActivity extends FragmentActivity implements
                             }
                         }
                     }
-
                 }
             };
             PebbleKit.registerReceivedDataHandler(this, pebbleListener);
@@ -399,11 +399,27 @@ public class MapsActivity extends FragmentActivity implements
                         toast.show();
                         tempLoc.setIsVisited(true);
 
-                        PebbleDictionary data = new PebbleDictionary();
-                        data.addUint8(0, (byte) 42);
-                        data.addString(1, tempLoc.getName());
-                        data.addString(2, tempLoc.getAutomatedActivity());
-                        PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_GEOFENCE, data);
+                        AutomatedDevice mDev = AutomatedDevice.DEVICE_MAP.get(tempLoc.getAutomatedActivity());
+                        if(mDev != null) {
+                            int size = mDev.getStateList().size();
+                            Iterator<String> devIt = mDev.getStateList().iterator();
+                            PebbleDictionary data = new PebbleDictionary();
+                            data.addUint8(0, (byte) 80);
+                            data.addString(1, tempLoc.getName());
+                            data.addString(2, tempLoc.getAutomatedActivity());
+                            data.addUint32(3, size);
+                            int i = 4;
+                            while (devIt.hasNext()) {
+                                String next = devIt.next();
+                                data.addString(i, next);
+                                Log.e("item ", next);
+                                i++;
+                            }
+                            PebbleKit.sendDataToPebble(getApplicationContext(), PEBBLE_APP_UUID_GEOFENCE, data);
+                        }else{
+                            Log.e("Device error:", "Device not found");
+                        }
+
 
                     }
                 }

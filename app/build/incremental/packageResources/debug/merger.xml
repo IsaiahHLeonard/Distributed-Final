@@ -2,24 +2,24 @@
 <merger>
 
     <dataSet config="main" >
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/main/res" >
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/main/res" >
             <file
-                path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/main/res/values/strings.xml"
+                path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/main/res/values/strings.xml"
                 qualifiers="" >
                 <string name="app_name" >PEBBLE_SPORTS_SDK
                 </string>
             </file>
             <file
                 name="main"
-                path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/main/res/layout/main.xml"
+                path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/main/res/layout/main.xml"
                 qualifiers=""
                 type="layout" />
         </source>
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/build/res/rs/debug" />
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/build/res/generated/debug" />
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/build/res/rs/debug" />
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/build/res/generated/debug" />
     </dataSet>
     <dataSet config="debug" >
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/debug/res" />
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/debug/res" />
     </dataSet>
 
 </merger>

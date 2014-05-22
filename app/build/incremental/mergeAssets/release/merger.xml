@@ -2,10 +2,10 @@
 <merger>
 
     <dataSet config="main" >
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/main/assets" />
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/main/assets" />
     </dataSet>
     <dataSet config="release" >
-        <source path="/home/nico/Documents/cs339/final/DistributedDirections/app/src/release/assets" />
+        <source path="/home/nico/Documents/cs339/final/androidAppTest/Distributed-Final/app/src/release/assets" />
     </dataSet>
 
 </merger>
