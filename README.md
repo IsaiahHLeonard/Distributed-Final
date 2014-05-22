@@ -7,4 +7,7 @@ folder is the actual C code for the app itself.
 
 The arduinoServer folder contains the code for our arduino.
 
-The rest of the files are for the 
+The rest of the files are the setup and actual files for the android app. The java files for the android, are in the
+DistributedDirections/src/main/java/com/distributed/directions folder. The xml files which are the layout and how the
+android pages look are in the DistributedDirections/src/main/res/layout folder.
+
