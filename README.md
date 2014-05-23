@@ -11,3 +11,6 @@ The rest of the files are the setup and actual files for the android app. The ja
 DistributedDirections/src/main/java/com/distributed/directions folder. The xml files which are the layout and how the
 android pages look are in the DistributedDirections/src/main/res/layout folder. We compiled the code and created the SDK using Android Studio, which then transfers the app SDK to the phone
 
+All of our code is also in a git repository that you can clone.
+
+https://github.com/nipcoe/Distributed-Final
